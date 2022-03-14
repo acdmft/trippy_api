@@ -84,5 +84,18 @@ router.post("/", validHotel, (req,res) => {
   res.json({message: "Hotel added", hotel})
   // res.send("hotel added")
 });
-
+// PATCH A HOTEL 
+router.patch("/:id", (req, res) => {
+  const hotel = hotels.find((hotel) => {
+    return hotel.id.toString() === req.params.id;
+  })
+  if (!hotel) {
+    return res.send(`Hotel with id: ${req.params.id} no found`);
+  }
+  hotel.name = req.body.name;
+  res.json({
+    message: "Updated hotel with id: " + req.params.id,
+    hotel
+  })
+})
 module.exports = router;
