@@ -10,4 +10,4 @@ app.use("/hotels", hotelsRoutes);
 app.use("*", (err, req, res, next) => {
   res.status(404).send("404 error");
 })
-app.listen(8080, () => console.log("Listent port 8080..."));
+app.listen(8001, () => console.log("Listent port 8001..."));

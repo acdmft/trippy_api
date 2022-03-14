@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router(); 
 const Joi = require("@hapi/joi");
+const { appendFile } = require("fs");
 
+// app.use(express.json());
 // HOTELS 
 const hotels = 
 [
@@ -45,7 +47,7 @@ const hotelSchema = Joi.object({
   address: Joi.string().required(),
   city: Joi.string().alphanum().required(),
   country: Joi.string().alphanum().required(),
-  stars: Joi.number().integer(),
+  stars: Joi.number().integer().min(1).max(5).required(),
   hasSpa: Joi.boolean(),
   hasPool: Joi.boolean(),
   priceCategory: Joi.number().integer().min(1).max(3).required()
@@ -58,6 +60,7 @@ function validHotel(req, res, next) {
       description: validation.error.details[0].message,
     });
   }
+  next();
 }
 // GET ALL HOTELS 
 router.get("/", (_req, res) => {
@@ -78,7 +81,8 @@ router.post("/", validHotel, (req,res) => {
   const hotel = req.body;
   hotel.id = hotels.length +1;
   hotels.push(hotel);
-  res.status(201).json({message: "Hotel added", hotel})
+  res.json({message: "Hotel added", hotel})
+  // res.send("hotel added")
 });
 
 module.exports = router;
