@@ -1,11 +1,14 @@
 const express = require("express");
 const app = express();
-// ROUTES 
+// ROUTERS 
 const hotelsRoutes = require("./routes/hotelsRoutes");
+const restaurantsRoutes = require("./routes/restaurantsRoutes");
 
 app.use(express.json());
 
+// ROUTERS
 app.use("/hotels", hotelsRoutes);
+app.use("/restaurants", restaurantsRoutes);
 
 app.use("*", (err, req, res, next) => {
   res.status(404).send("404 error");

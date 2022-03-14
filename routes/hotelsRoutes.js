@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router(); 
 const Joi = require("@hapi/joi");
-const { appendFile } = require("fs");
 
-// app.use(express.json());
 // HOTELS 
 const hotels = 
 [
@@ -70,7 +68,7 @@ router.get("/", (_req, res) => {
   res.json(hotels);
 })
 // GET HOTEL BY ID 
-router.get("/id/:id", (req, res) => {
+router.get("/:id", (req, res) => {
   const hotel = hotels.find((hotel) => {
     return hotel.id.toString() === req.params.id; 
   })
@@ -85,7 +83,6 @@ router.post("/", validHotel, (req,res) => {
   hotel.id = hotels.length +1;
   hotels.push(hotel);
   res.json({message: "Hotel added", hotel})
-  // res.send("hotel added")
 });
 // PATCH A HOTEL 
 router.patch("/:id", (req, res) => {
