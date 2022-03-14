@@ -5,6 +5,8 @@ const hotelsRoutes = require("./routes/hotelsRoutes");
 const restaurantsRoutes = require("./routes/restaurantsRoutes");
 
 app.use(express.json());
+// Only parse query parameters into strings, not objects
+app.set('query parser', 'simple');
 
 // ROUTERS
 app.use("/hotels", hotelsRoutes);
