@@ -52,6 +52,8 @@ const hotelSchema = Joi.object({
   hasPool: Joi.boolean(),
   priceCategory: Joi.number().integer().min(1).max(3).required()
 })
+// MIDDLEWARES
+// HOTEL VALIDATION MIDDLEWARE
 function validHotel(req, res, next) {
   const validation = hotelSchema.validate(req.body);
   if (validation.error) {
@@ -62,6 +64,7 @@ function validHotel(req, res, next) {
   }
   next();
 }
+// ROUTES
 // GET ALL HOTELS 
 router.get("/", (_req, res) => {
   res.json(hotels);
@@ -96,6 +99,22 @@ router.patch("/:id", (req, res) => {
   res.json({
     message: "Updated hotel with id: " + req.params.id,
     hotel
+  })
+})
+// DELETE AN HOTEL
+router.delete("/:id", (req, res) => {
+  const hotel = hotels.find((hotel)=>{
+    return hotel.id.toString() === req.params.id;
+  });
+  if (!hotel) {
+    return res.send(`Hotel with id: ${req.params.id} not found`);
+  }
+  const index = hotels.indexOf(hotel);
+  hotels.splice(index, 1);
+
+  res.json({
+    message: `The hotel with id ${req.params.id} was removed`,
+    hotels
   })
 })
 module.exports = router;
