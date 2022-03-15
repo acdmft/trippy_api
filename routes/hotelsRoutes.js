@@ -1,45 +1,55 @@
 const express = require("express");
-const router = express.Router(); 
+const router = express.Router();
 const Joi = require("@hapi/joi");
 
-// HOTELS 
-const hotels = 
-[
-	{
-		"id": 1,
-		"name": "Imperial Hotel",
-		"address": "84 av des Champs-Élysées",
-		"city": "Paris",
-		"country": "France",
-		"stars": 5,
-		"hasSpa": true,
-		"hasPool": true,
-		"priceCategory": 3
-	},
-	{
-		"id": 2,
-		"name": "The Queen",
-		"address": "3 Darwin Street",
-		"city": "London",
-		"country": "England",
-		"stars": 4,
-		"hasSpa": true,
-		"hasPool": false,
-		"priceCategory": 3
-	},
-	{
-		"id": 3,
-		"name": "Kiwi land",
-		"address": "4587 George St.",
-		"city": "Auckland",
-		"country": "New-Zealand",
-		"stars": 3,
-		"hasSpa": false,
-		"hasPool": true,
-		"priceCategory": 2
-	}
-]
-// JOI VALIDATION SCHEMA 
+// HOTELS
+const hotels = [
+  {
+    id: 1,
+    name: "Imperial Hotel",
+    address: "84 av des Champs-Élysées",
+    city: "Paris",
+    country: "France",
+    stars: 5,
+    hasSpa: true,
+    hasPool: true,
+    priceCategory: 3,
+  },
+  {
+    id: 2,
+    name: "The Queen",
+    address: "3 Darwin Street",
+    city: "London",
+    country: "England",
+    stars: 4,
+    hasSpa: true,
+    hasPool: false,
+    priceCategory: 3,
+  },
+  {
+    id: 3,
+    name: "Kiwi land",
+    address: "4587 George St.",
+    city: "Auckland",
+    country: "New-Zealand",
+    stars: 3,
+    hasSpa: false,
+    hasPool: true,
+    priceCategory: 2,
+  },
+  {
+    id: 4,
+    name: "Tower",
+    address: "4587 George St.",
+    city: "Auckland",
+    country: "France",
+    stars: 3,
+    hasSpa: false,
+    hasPool: true,
+    priceCategory: 2,
+  },
+];
+// JOI VALIDATION SCHEMA
 const hotelSchema = Joi.object({
   name: Joi.string().required(),
   address: Joi.string().required(),
@@ -48,8 +58,8 @@ const hotelSchema = Joi.object({
   stars: Joi.number().integer().min(1).max(5).required(),
   hasSpa: Joi.boolean(),
   hasPool: Joi.boolean(),
-  priceCategory: Joi.number().integer().min(1).max(3).required()
-})
+  priceCategory: Joi.number().integer().min(1).max(3).required(),
+});
 // MIDDLEWARES
 // HOTEL VALIDATION MIDDLEWARE
 function validHotel(req, res, next) {
@@ -62,45 +72,84 @@ function validHotel(req, res, next) {
   }
   next();
 }
-// ROUTES
-// GET ALL HOTELS 
-router.get("/", (_req, res) => {
+
+// ADVANCED ROUTES (WITH QUERY PARAMETERS)
+router.get("/", (req, res) => {
+  const queryKeys = Object.keys(req.query);
+  if (queryKeys.length > 0) {
+    let result = hotels;
+    let allowedParams = [
+      "city",
+      "country",
+      "stars",
+      "cuisine",
+      "priceCategory",
+      "hasSpa",
+      "hasPool",
+    ];
+    for (let i = 0; i < queryKeys.length; i++) {
+      console.log(allowedParams.includes(queryKeys[i]))
+      if (allowedParams.includes(queryKeys[i])) {
+        // iterate hotels
+        for (let j = 0; j < hotels.length; j++) {
+          let param = req.query[queryKeys[i]];
+          let hotelVal = hotels[j][queryKeys[i]];
+          // if param doesn't match to any hotel exclude this restaurant from final array
+          if (hotelVal.toString().toLowerCase() !== param) {
+            // remove all hotels with the same param value 
+            result = result.filter((hotel) => {
+              return hotel[queryKeys[i]] !== hotelVal;
+            })
+          }
+        }
+      }
+    }
+
+    if (result.length > 0) {
+      return res.json(result);
+    } else {
+      return res.json({ message: "No restaurants matching parameters" });
+    }
+  }
+  // if no query params provided send all hotels
   res.json(hotels);
-})
-// GET HOTEL BY ID 
+});
+// ROUTES
+
+// GET HOTEL BY ID
 router.get("/:id", (req, res) => {
   const hotel = hotels.find((hotel) => {
-    return hotel.id.toString() === req.params.id; 
-  })
+    return hotel.id.toString() === req.params.id;
+  });
   if (!hotel) {
     return res.send(`Hotel with id: ${req.params.id} not found`);
   }
   res.json(hotel);
-})
-// POST AN HOTEL 
-router.post("/", validHotel, (req,res) => {
-  const hotel = req.body;
-  hotel.id = hotels.length +1;
-  hotels.push(hotel);
-  res.json({message: "Hotel added", hotel})
 });
-// PATCH A HOTEL 
+// POST AN HOTEL
+router.post("/", validHotel, (req, res) => {
+  const hotel = req.body;
+  hotel.id = hotels.length + 1;
+  hotels.push(hotel);
+  res.json({ message: "Hotel added", hotel });
+});
+// PATCH A HOTEL
 router.patch("/:id", (req, res) => {
   const hotel = hotels.find((hotel) => {
     return hotel.id.toString() === req.params.id;
-  })
+  });
   if (!hotel) {
     return res.send(`Hotel with id: ${req.params.id} no found`);
   }
   hotel.name = req.body.name;
   res.json({
     message: "Updated hotel with id: " + req.params.id,
-    hotel
-  })
-})
+    hotel,
+  });
+});
 // DELETE AN HOTEL
 router.delete("/:id", (req, res) => {
-  const hotel = hotels.find((hotel)=>{
+  const hotel = hotels.find((hotel) => {
     return hotel.id.toString() === req.params.id;
   });
   if (!hotel) {
@@ -111,7 +160,7 @@ router.delete("/:id", (req, res) => {
 
   res.json({
     message: `The hotel with id ${req.params.id} was removed`,
-    hotels
-  })
-})
+    hotels,
+  });
+});
 module.exports = router;

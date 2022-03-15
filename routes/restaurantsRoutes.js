@@ -35,7 +35,7 @@ const restaurants = [
     priceCategory: 2,
   },
   {
-  id: 4,
+    id: 4,
     name: "McDonalds",
     address: "22 av",
     city: "Chicago",
@@ -43,7 +43,7 @@ const restaurants = [
     stars: 4,
     cuisine: "french",
     priceCategory: 3,
-  }
+  },
 ];
 // JOI VALIDATION SCHEMA
 const restaurantSchema = Joi.object({
@@ -69,39 +69,43 @@ function validRestaurant(req, res, next) {
 }
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
 router.get("/", (req, res) => {
-  console.log(req.query);
+  console.log(req.query)
   const queryKeys = Object.keys(req.query);
   if (queryKeys.length > 0) {
     let result = restaurants;
-    let allowedParams = ['name', 'address', 'city', 'country', 'stars', 'cuisine', 'priceCategory'];
+    let allowedParams = [
+      "city",
+      "country",
+      "stars",
+      "cuisine",
+      "priceCategory",
+    ];
     for (let i = 0; i < queryKeys.length; i++) {
-      if (allowedParams.includes(req.query[queryKeys[i]])) {
+      if (allowedParams.includes(queryKeys[i])) {
+        console.log('includes');
         // iterate restaurants
-        for (let j = 0; j< restaurants.length; j++) {
+        for (let j = 0; j < restaurants.length; j++) {
           let param = req.query[queryKeys[i]];
           let restVal = restaurants[j][queryKeys[i]];
           // if param doesn't match to any restaurant exclude this restaurant from final array
           if (restVal.toString().toLowerCase() !== param) {
-            // check if restaurant is not already in result array
-            let elemToRemove = result.findIndex((resultRest) => {
-              return restaurants[j].name === resultRest.name;
-            });
-            result.splice(elemToRemove, 1);
+            // remove all restaurants with the same param value 
+            result = result.filter((rest) => {
+              return rest[queryKeys[i]] !== restVal;
+            })
           }
-          }
+        }
       }
-      }
-      
+    }
+
     if (result.length > 0) {
       return res.json(result);
     } else {
-      return res.json({message: "No restaurants matching parameters"})
+      return res.json({ message: "No restaurants matching parameters" });
     }
   }
   // if no query params provided send all restaurants
   res.json(restaurants);
-
-
 });
 
 // ROUTES
