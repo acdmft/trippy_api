@@ -34,6 +34,16 @@ const restaurants = [
     cuisine: "vegan",
     priceCategory: 2,
   },
+  {
+  id: 4,
+    name: "McDonalds",
+    address: "22 av",
+    city: "Chicago",
+    country: "US",
+    stars: 4,
+    cuisine: "french",
+    priceCategory: 3,
+  }
 ];
 // JOI VALIDATION SCHEMA
 const restaurantSchema = Joi.object({
@@ -62,48 +72,40 @@ router.get("/", (req, res) => {
   console.log(req.query);
   const queryKeys = Object.keys(req.query);
   if (queryKeys.length > 0) {
-    let result = [];
+    let result = restaurants;
+    let allowedParams = ['name', 'address', 'city', 'country', 'stars', 'cuisine', 'priceCategory'];
     for (let i = 0; i < queryKeys.length; i++) {
-      switch (queryKeys[i]) {
-        case "country":
-          console.log('country parameter')
-          let foundRestaurants = restaurants.filter((rest) => {
-            return rest.country.replace(" ", "-").toLowerCase() === req.query["country"];
-          });
-          console.log(foundRestaurants);
-          foundRestaurants.forEach((foundRest) => {
-            let isInResult = result.find((rest) => {
-              return rest.name.replace(" ", "-") === foundRest.name.replace(" ", "-");
-            })
-            console.log(isInResult)
-            if (isInResult === undefined) {
-              result.push(foundHotel);
-              console.log(result)
-            }
-          })
-        case "priceCategory":
-        case "hasSpa":
-        case "hasPiscine":
-        default: 
-          break;
-
+      if (allowedParams.includes(req.query[queryKeys[i]])) {
+        // iterate restaurants
+        for (let j = 0; j< restaurants.length; j++) {
+          let param = req.query[queryKeys[i]];
+          let restVal = restaurants[j][queryKeys[i]];
+          // if param doesn't match to any restaurant exclude this restaurant from final array
+          if (restVal.toString().toLowerCase() !== param) {
+            // check if restaurant is not already in result array
+            let elemToRemove = result.findIndex((resultRest) => {
+              return restaurants[j].name === resultRest.name;
+            });
+            result.splice(elemToRemove, 1);
+          }
+          }
       }
-    } 
+      }
+      
     if (result.length > 0) {
       return res.json(result);
     } else {
       return res.json({message: "No restaurants matching parameters"})
     }
   }
+  // if no query params provided send all restaurants
   res.json(restaurants);
+
 
 });
 
 // ROUTES
-// GET ALL RESTAURANTS
-router.get("/", (_req, res) => {
-  res.json(restaurants);
-});
+
 // GET RESTAURANT BY ID
 router.get("/:id", (req, res) => {
   const restaurant = restaurants.find((restaurant) => {
