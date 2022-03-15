@@ -58,25 +58,45 @@ function validRestaurant(req, res, next) {
   next();
 }
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
-router.get("/all", (req, res) => {
+router.get("/", (req, res) => {
   console.log(req.query);
-  let result = [];
-  if (req.query.country) {
-    const rest = restaurants.filter((restaurant) => {
-      console.log(restaurant.country.toLowerCase())
-      return (
-        restaurant.country.replace(" ", "-").toLowerCase() ===
-        req.query.country.replace(" ", "-").toLowerCase()
-      );
-    });
-    result = result.concat(rest);
+  const queryKeys = Object.keys(req.query);
+  if (queryKeys.length > 0) {
+    let result = [];
+    for (let i = 0; i < queryKeys.length; i++) {
+      switch (queryKeys[i]) {
+        case "country":
+          console.log('country parameter')
+          let foundRestaurants = restaurants.filter((rest) => {
+            return rest.country.replace(" ", "-").toLowerCase() === req.query["country"];
+          });
+          console.log(foundRestaurants);
+          foundRestaurants.forEach((foundRest) => {
+            let isInResult = result.find((rest) => {
+              return rest.name.replace(" ", "-") === foundRest.name.replace(" ", "-");
+            })
+            console.log(isInResult)
+            if (isInResult === undefined) {
+              result.push(foundHotel);
+              console.log(result)
+            }
+          })
+        case "priceCategory":
+        case "hasSpa":
+        case "hasPiscine":
+        default: 
+          break;
+
+      }
+    } 
+    if (result.length > 0) {
+      return res.json(result);
+    } else {
+      return res.json({message: "No restaurants matching parameters"})
+    }
   }
-  console.log(req.query.country.toLowerCase())
-  if (result.length > 0) {
-    res.json(result);
-  } else {
-    res.send("No query parameter matched");
-  }
+  res.json(restaurants);
+
 });
 
 // ROUTES
