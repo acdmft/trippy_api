@@ -85,7 +85,7 @@ setInterval(() => {
 }, 1000);
 
 function limitNumOfRequests(_req, res, next) {
-  if (numOfRequests > 10) {
+  if (numOfRequests > 100) {
     console.log(time);
     return res.status(429).json({ message: "Too many requests for minute!" });
   }
