@@ -67,9 +67,28 @@ function validRestaurant(req, res, next) {
   }
   next();
 }
+// SET LIMIT OF REQUESTS PER MINUTE
+let time = 0;
+let numOfRequests = 0;
+setInterval(() => {
+  if (time < 60) {
+    time++;
+  } else {
+    time = 0;
+    numOfRequests = 0;
+  }
+}, 1000);
+
+function limitNumOfRequests(_req, res, next) {
+  if (numOfRequests > 10) {
+    console.log(time);
+    return res.status(429).json({ message: "Too many requests for minute!" });
+  }
+  numOfRequests++;
+  next();
+}
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
-router.get("/", (req, res) => {
-  console.log(req.query)
+router.get("/", limitNumOfRequests, (req, res) => {
   const queryKeys = Object.keys(req.query);
   if (queryKeys.length > 0) {
     let result = restaurants;
@@ -82,7 +101,6 @@ router.get("/", (req, res) => {
     ];
     for (let i = 0; i < queryKeys.length; i++) {
       if (allowedParams.includes(queryKeys[i])) {
-        console.log('includes');
         // iterate restaurants
         for (let j = 0; j < restaurants.length; j++) {
           let param = req.query[queryKeys[i]];
@@ -111,7 +129,7 @@ router.get("/", (req, res) => {
 // ROUTES
 
 // GET RESTAURANT BY ID
-router.get("/:id", (req, res) => {
+router.get("/:id", limitNumOfRequests, (req, res) => {
   const restaurant = restaurants.find((restaurant) => {
     return restaurant.id.toString() === req.params.id;
   });
@@ -121,14 +139,14 @@ router.get("/:id", (req, res) => {
   res.json(restaurant);
 });
 // POST A RESTAURANT
-router.post("/", validRestaurant, (req, res) => {
+router.post("/", limitNumOfRequests, validRestaurant, (req, res) => {
   const restaurant = req.body;
   restaurant.id = restaurants.length + 1;
   restaurants.push(restaurant);
   res.json({ message: "Restaurant added", restaurants });
 });
 // PATCH A RESTAURANT
-router.patch("/:id", (req, res) => {
+router.patch("/:id", limitNumOfRequests, (req, res) => {
   const restaurant = restaurants.find((restaurant) => {
     return restaurant.id.toString() === req.params.id;
   });
@@ -142,7 +160,7 @@ router.patch("/:id", (req, res) => {
   });
 });
 // DELETE A RESTAURANT
-router.delete("/:id", (req, res) => {
+router.delete("/:id", limitNumOfRequests, (req, res) => {
   const restaurant = restaurants.find((restaurant) => {
     return restaurant.id.toString() === req.params.id;
   });

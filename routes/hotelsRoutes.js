@@ -72,9 +72,29 @@ function validHotel(req, res, next) {
   }
   next();
 }
+// SET LIMIT OF REQUESTS PER MINUTE
+let time = 0;
+let numOfRequests = 0;
+setInterval(() => {
+  if (time < 60) {
+    time++;
+  } else {
+    time = 0;
+    numOfRequests = 0;
+  }
+}, 1000);
+
+function limitNumOfRequests(_req, res, next) {
+  if (numOfRequests > 10) {
+    console.log(time);
+    return res.status(429).json({ message: "Too many requests for minute!" });
+  }
+  numOfRequests++;
+  next();
+}
 
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
-router.get("/", (req, res) => {
+router.get("/", limitNumOfRequests, (req, res) => {
   const queryKeys = Object.keys(req.query);
   if (queryKeys.length > 0) {
     let result = hotels;
@@ -88,7 +108,6 @@ router.get("/", (req, res) => {
       "hasPool",
     ];
     for (let i = 0; i < queryKeys.length; i++) {
-      console.log(allowedParams.includes(queryKeys[i]))
       if (allowedParams.includes(queryKeys[i])) {
         // iterate hotels
         for (let j = 0; j < hotels.length; j++) {
@@ -96,15 +115,14 @@ router.get("/", (req, res) => {
           let hotelVal = hotels[j][queryKeys[i]];
           // if param doesn't match to any hotel exclude this restaurant from final array
           if (hotelVal.toString().toLowerCase() !== param) {
-            // remove all hotels with the same param value 
+            // remove all hotels with the same param value
             result = result.filter((hotel) => {
               return hotel[queryKeys[i]] !== hotelVal;
-            })
+            });
           }
         }
       }
     }
-
     if (result.length > 0) {
       return res.json(result);
     } else {
@@ -117,7 +135,7 @@ router.get("/", (req, res) => {
 // ROUTES
 
 // GET HOTEL BY ID
-router.get("/:id", (req, res) => {
+router.get("/:id", limitNumOfRequests, (req, res) => {
   const hotel = hotels.find((hotel) => {
     return hotel.id.toString() === req.params.id;
   });
@@ -127,7 +145,7 @@ router.get("/:id", (req, res) => {
   res.json(hotel);
 });
 // POST AN HOTEL
-router.post("/", validHotel, (req, res) => {
+router.post("/", limitNumOfRequests, validHotel, (req, res) => {
   const hotel = req.body;
   hotel.id = hotels.length + 1;
   hotels.push(hotel);
@@ -148,7 +166,7 @@ router.patch("/:id", (req, res) => {
   });
 });
 // DELETE AN HOTEL
-router.delete("/:id", (req, res) => {
+router.delete("/:id", limitNumOfRequests, (req, res) => {
   const hotel = hotels.find((hotel) => {
     return hotel.id.toString() === req.params.id;
   });
