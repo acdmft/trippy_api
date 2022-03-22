@@ -146,14 +146,20 @@ router.get("/", async (req, res) => {
 // ROUTES
 
 // GET RESTAURANT BY ID
-router.get("/:id", limitNumOfRequests, (req, res) => {
-  const restaurant = restaurants.find((restaurant) => {
-    return restaurant.id.toString() === req.params.id;
-  });
-  if (!restaurant) {
-    return res.send(`Restaurant with id: ${req.params.id} not found`);
+router.get("/:id", limitNumOfRequests, async (req, res) => {
+  let restaurant;
+  try {
+    restaurant = await Postgres.query(
+      "SELECT * FROM restaurants WHERE id=$1",
+      [req.params.id]
+    );
+  } catch(err) {
+    return res.json({message: err});
   }
-  res.json(restaurant);
+  if (restaurant.rows.length === 0) {
+    res.json({message: `restaurant with id: ${req.params.id}`});
+  }
+  res.json(restaurant.rows);
 });
 // POST A RESTAURANT
 router.post("/", limitNumOfRequests, validRestaurant, (req, res) => {
