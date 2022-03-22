@@ -60,7 +60,7 @@ const restaurantSchema = Joi.object({
   country: Joi.string().alphanum().required(),
   stars: Joi.number().integer().min(1).max(5).required(),
   cuisine: Joi.string().alphanum().required(),
-  priceCategory: Joi.number().integer().min(1).max(3).required(),
+  pricecategory: Joi.number().integer().min(1).max(3).required(),
 });
 // MIDDLEWARES
 // RESTAURANT VALIDATION MIDDLEWARE
@@ -162,12 +162,18 @@ router.get("/:id", limitNumOfRequests, async (req, res) => {
   res.json(restaurant.rows);
 });
 // POST A RESTAURANT
-router.post("/", limitNumOfRequests, validRestaurant, (req, res) => {
-  const restaurant = req.body;
-  restaurant.id = restaurants.length + 1;
-  restaurants.push(restaurant);
-  res.json({ message: "Restaurant added", restaurants });
+router.post("/", limitNumOfRequests, validRestaurant, async (req, res) => {
+  try {
+    await Postgres.query(
+      "INSERT INTO restaurants (name, address, city, country, stars, cuisine, pricecategory) VALUES ($1,$2,$3,$4,$5,$6, $7)",
+      [req.body.name, req.body.address, req.body.city, req.body.country, req.body.stars, req.body.cuisine, req.body.pricecategory]
+    );
+  } catch {
+    return res.json({message: err});
+  } 
+  res.json({ message: "Restaurant added"});
 });
+
 // PATCH A RESTAURANT
 router.patch("/:id", limitNumOfRequests, (req, res) => {
   const restaurant = restaurants.find((restaurant) => {
