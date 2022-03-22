@@ -188,20 +188,20 @@ router.patch("/:id", limitNumOfRequests, async (req, res) => {
   res.json({message: "Name of the restaurant changed"});
 });
 // DELETE A RESTAURANT
-router.delete("/:id", limitNumOfRequests, (req, res) => {
-  const restaurant = restaurants.find((restaurant) => {
-    return restaurant.id.toString() === req.params.id;
-  });
-  if (!restaurant) {
-    return res.send(`Restaurant with id: ${req.params.id} not found`);
+router.delete("/:id", limitNumOfRequests, async (req, res) => {
+  let result;
+  try {
+    result = await Postgres.query(
+      "DELETE FROM restaurants WHERE id = $1",
+      [req.params.id]
+    )
+  } catch(err) {
+    return res.json({message: err});
   }
-  const index = restaurants.indexOf(restaurant);
-  restaurants.splice(index, 1);
-
-  res.json({
-    message: `The restaurant with id ${req.params.id} was removed`,
-    restaurants,
-  });
+  if (result.rowCount === 0) {
+    return res.json({message: `Restaurant with id: ${req.params.id} not found`})
+  }
+  res.json({message: `Restaurant with id: ${req.params.id} was removed`});
 });
 
 module.exports = router;
