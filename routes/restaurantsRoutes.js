@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Joi = require("@hapi/joi");
-const dotenv = require("dotenv");
-dotenv.config({
-  path: "../config.env"
-});
+// pg configuration
 const { Pool } = require("pg");
 const Postgres = new Pool({ssl: {rejectUnauthorized: false}});
 
@@ -174,19 +171,21 @@ router.post("/", limitNumOfRequests, validRestaurant, async (req, res) => {
   res.json({ message: "Restaurant added"});
 });
 
-// PATCH A RESTAURANT
-router.patch("/:id", limitNumOfRequests, (req, res) => {
-  const restaurant = restaurants.find((restaurant) => {
-    return restaurant.id.toString() === req.params.id;
-  });
-  if (!restaurant) {
-    return res.send(`Restaurant with id: ${req.params.id} no found`);
+// PATCH A RESTAURANT (CHANGE NAME)
+router.patch("/:id", limitNumOfRequests, async (req, res) => {
+  let result;
+  try {
+    result = await Postgres.query(
+      "UPDATE restaurants SET name = $1 WHERE id = $2",
+      [req.body.name, req.params.id]
+    )
+  } catch(err) {
+    return res.json({message: `Error happened: ${err}`})
   }
-  restaurant.name = req.body.name;
-  res.json({
-    message: "Updated restaurant with id: " + req.params.id,
-    restaurant,
-  });
+  if (result.rowCount === 0) {
+    return res.json({message: `No restaurant with id: ${req.params.id} found`});
+  }
+  res.json({message: "Name of the restaurant changed"});
 });
 // DELETE A RESTAURANT
 router.delete("/:id", limitNumOfRequests, (req, res) => {
