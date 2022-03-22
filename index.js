@@ -9,6 +9,8 @@ const dotenv = require("dotenv");
 dotenv.config({
   path: "./config.env"
 });
+const { Pool } = require("pg");
+const Postgres = new Pool({ssl: {rejectUnauthorized: false}});
 
 app.use(express.json());
 // Only parse query parameters into strings, not objects
@@ -17,11 +19,19 @@ app.set('query parser', 'simple');
 // USERS
 const users = [];
 // CREATE USER 
-app.post("/premium", (req, res) => {
-  console.log('post req /premium');
-  const apiKey = uuidv4();
-  users.push({username: req.body.username, key: apiKey});
-  res.json(apiKey);
+app.post("/premium", async (req, res) => {
+  let result;
+  try {
+    const apiKey = uuidv4();
+    result = await Postgres.query(
+      "INSERT INTO users (name, api_key) VALUES ($1,$2) RETURNING api_key",
+      [req.body.name, apiKey]
+    )
+  } catch(err) {
+    return res.json({message: err});
+  }
+  
+  res.json(result.rows);
 });
 // GET USER 
 app.get("/api-key", (req, res) => {
