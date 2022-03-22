@@ -1,6 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const Joi = require("@hapi/joi");
+const dotenv = require("dotenv");
+dotenv.config({
+  path: "../config.env"
+});
+const { Pool } = require("pg");
+const Postgres = new Pool({ssl: {rejectUnauthorized: false}});
+
 
 // restaurants
 const restaurants = [
@@ -88,43 +95,53 @@ function limitNumOfRequests(_req, res, next) {
   next();
 }
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
-router.get("/", limitNumOfRequests, (req, res) => {
+router.get("/", async (req, res) => {
   const queryKeys = Object.keys(req.query);
-  if (queryKeys.length > 0) {
-    let result = restaurants;
-    let allowedParams = [
-      "city",
-      "country",
-      "stars",
-      "cuisine",
-      "priceCategory",
-    ];
-    for (let i = 0; i < queryKeys.length; i++) {
-      if (allowedParams.includes(queryKeys[i])) {
-        // iterate restaurants
-        for (let j = 0; j < restaurants.length; j++) {
-          let param = req.query[queryKeys[i]];
-          let restVal = restaurants[j][queryKeys[i]];
-          // if param doesn't match to any restaurant exclude this restaurant from final array
-          if (restVal.toString().toLowerCase() !== param) {
-            // remove all restaurants with the same param value 
-            result = result.filter((rest) => {
-              return rest[queryKeys[i]] !== restVal;
-            })
-          }
-        }
-      }
-    }
-
-    if (result.length > 0) {
-      return res.json(result);
-    } else {
-      return res.json({ message: "No restaurants matching parameters" });
+  let result = await Postgres.query(
+    "SELECT * FROM restaurants"
+  );
+  result = result.rows;
+  let restaurants = result.rows;
+  if (queryKeys.length === 0) {
+    return res.json(result);
+  }
+  let allowedParams = ["city", "country", "stars", "cuisine", "pricecategory"];
+  for (let i=0; i < queryKeys.length;i++) {
+    if (allowedParams.includes(queryKeys[i])) {
+      result = result.filter((rest) => {
+        return rest[queryKeys[i]].toString().toLowerCase() === req.query[queryKeys[i]].toLowerCase();
+      })
     }
   }
-  // if no query params provided send all restaurants
-  res.json(restaurants);
+  if (result.length === 0) {
+    res.json({message: "No restaurants mathcing parameters"})
+  }
+  res.json(result);
 });
+// ADVANCED ROUTES (WITH QUERY PARAMETERS)
+// router.get("/", limitNumOfRequests, (req, res) => {
+//   const queryKeys = Object.keys(req.query);
+//   if (queryKeys.length === 0) {
+//     // if no query params provided send all restaurants
+//     return res.json(restaurants);
+//   }
+//   let result = restaurants;
+//   let allowedParams = ["city", "country", "stars", "cuisine", "priceCategory"];
+//   for (let i = 0; i < queryKeys.length; i++) {
+//     // better to use Joi or other library to validate params
+//     if (allowedParams.includes(queryKeys[i])) {
+//       result = result.filter((rest) => {
+//         return rest[queryKeys[i]].toString().toLowerCase() === req.query[queryKeys[i]].toLowerCase();
+//       });
+//     }
+//   }
+
+//   if (result.length > 0) {
+//     return res.json(result);
+//   } else {
+//     return res.json({ message: "No restaurants matching parameters" });
+//   }
+// });
 
 // ROUTES
 

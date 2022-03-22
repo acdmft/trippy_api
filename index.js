@@ -5,6 +5,10 @@ const { v4: uuidv4 } = require('uuid');
 // ROUTERS 
 const hotelsRoutes = require("./routes/hotelsRoutes");
 const restaurantsRoutes = require("./routes/restaurantsRoutes");
+const dotenv = require("dotenv");
+dotenv.config({
+  path: "./config.env"
+});
 
 app.use(express.json());
 // Only parse query parameters into strings, not objects
