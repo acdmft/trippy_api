@@ -11,7 +11,7 @@ dotenv.config({
 });
 // const { Pool } = require("pg");
 // const Postgres = new Pool({ssl: {rejectUnauthorized: false}});
-console.log(process.env.MONGO_URI);
+
 //  connect to MongoDB
 const mongoose = require("mongoose");
 mongoose.connect(
