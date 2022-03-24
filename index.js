@@ -22,8 +22,6 @@ mongoose.connect(
 });
 
 app.use(express.json());
-// Only parse query parameters into strings, not objects
-app.set('query parser', 'simple');
 
 // USERS
 const users = [];

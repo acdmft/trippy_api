@@ -2,10 +2,24 @@ const express = require("express");
 const router = express.Router();
 const Joi = require("@hapi/joi");
 // pg configuration
-const { Pool } = require("pg");
-const Postgres = new Pool({ssl: {rejectUnauthorized: false}});
+// const { Pool } = require("pg");
+// const Postgres = new Pool({ssl: {rejectUnauthorized: false}});
+const mongoose = require("mongoose");
+// Restaurant Schema 
+const Restaurant = require("../models/restModel");
 
+const dotenv = require("dotenv");
+dotenv.config({
+  path: "./config.env",
+});
 
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  });
 // restaurants
 const restaurants = [
   {
@@ -92,34 +106,47 @@ function limitNumOfRequests(_req, res, next) {
   next();
 }
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
+// router.get("/", async (req, res) => {
+//   const queryKeys = Object.keys(req.query);
+//   const instruction = "SELECT * FROM hotels";
+//   let instruction2 = `SELECT * FROM hotels WHERE ${queryKeys[0]}=${req.query[queryKeys[0]].toString().toLowerCase()}`;
+
+
+//   // const queryKeys = Object.keys(req.query);
+//   let result = await Postgres.query(
+//     "SELECT * FROM restaurants"
+//   );
+//   result = result.rows;
+//   let restaurants = result.rows;
+//   if (queryKeys.length === 0) {
+//     return res.json(result);
+//   }
+//   let allowedParams = ["city", "country", "stars", "cuisine", "pricecategory"];
+//   for (let i=0; i < queryKeys.length;i++) {
+//     if (allowedParams.includes(queryKeys[i])) {
+//       result = result.filter((rest) => {
+//         return rest[queryKeys[i]].toString().toLowerCase() === req.query[queryKeys[i]].toLowerCase();
+//       })
+//     }
+//   }
+//   if (result.length === 0) {
+//     res.json({message: "No restaurants mathcing parameters"})
+//   }
+//   res.json(result);
+// });
+
 router.get("/", async (req, res) => {
   const queryKeys = Object.keys(req.query);
-  const instruction = "SELECT * FROM hotels";
-  let instruction2 = `SELECT * FROM hotels WHERE ${queryKeys[0]}=${req.query[queryKeys[0]].toString().toLowerCase()}`;
-
-
-  // const queryKeys = Object.keys(req.query);
-  let result = await Postgres.query(
-    "SELECT * FROM restaurants"
-  );
-  result = result.rows;
-  let restaurants = result.rows;
   if (queryKeys.length === 0) {
-    return res.json(result);
-  }
-  let allowedParams = ["city", "country", "stars", "cuisine", "pricecategory"];
-  for (let i=0; i < queryKeys.length;i++) {
-    if (allowedParams.includes(queryKeys[i])) {
-      result = result.filter((rest) => {
-        return rest[queryKeys[i]].toString().toLowerCase() === req.query[queryKeys[i]].toLowerCase();
-      })
+    try {
+      const result = await Restaurant.find();
+      return res.json(result);
+    } catch (err) {
+      return res.status(400).json({message: err});
     }
   }
-  if (result.length === 0) {
-    res.json({message: "No restaurants mathcing parameters"})
-  }
-  res.json(result);
 });
+
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
 // router.get("/", limitNumOfRequests, (req, res) => {
 //   const queryKeys = Object.keys(req.query);
@@ -148,33 +175,38 @@ router.get("/", async (req, res) => {
 // ROUTES
 
 // GET RESTAURANT BY ID
+
+// router.get("/:id", limitNumOfRequests, async (req, res) => {
+//   let restaurant;
+//   try {
+//     restaurant = await Postgres.query(
+//       "SELECT * FROM restaurants WHERE id=$1",
+//       [req.params.id]
+//     );
+//   } catch(err) {
+//     return res.json({message: err});
+//   }
+//   if (restaurant.rows.length === 0) {
+//     res.json({message: `restaurant with id: ${req.params.id}`});
+//   }
+//   res.json(restaurant.rows);
+// });
 router.get("/:id", limitNumOfRequests, async (req, res) => {
-  let restaurant;
-  try {
-    restaurant = await Postgres.query(
-      "SELECT * FROM restaurants WHERE id=$1",
-      [req.params.id]
-    );
-  } catch(err) {
-    return res.json({message: err});
-  }
-  if (restaurant.rows.length === 0) {
-    res.json({message: `restaurant with id: ${req.params.id}`});
-  }
-  res.json(restaurant.rows);
+  await Restaurant.findById(req.params.id);
 });
+
 // POST A RESTAURANT
-router.post("/", limitNumOfRequests, validRestaurant, async (req, res) => {
-  try {
-    await Postgres.query(
-      "INSERT INTO restaurants (name, address, city, country, stars, cuisine, pricecategory) VALUES ($1,$2,$3,$4,$5,$6, $7)",
-      [req.body.name, req.body.address, req.body.city, req.body.country, req.body.stars, req.body.cuisine, req.body.pricecategory]
-    );
-  } catch {
-    return res.json({message: err});
-  } 
-  res.json({ message: "Restaurant added"});
-});
+// router.post("/", limitNumOfRequests, validRestaurant, async (req, res) => {
+//   try {
+//     await Postgres.query(
+//       "INSERT INTO restaurants (name, address, city, country, stars, cuisine, pricecategory) VALUES ($1,$2,$3,$4,$5,$6, $7)",
+//       [req.body.name, req.body.address, req.body.city, req.body.country, req.body.stars, req.body.cuisine, req.body.pricecategory]
+//     );
+//   } catch {
+//     return res.json({message: err});
+//   } 
+//   res.json({ message: "Restaurant added"});
+// });
 
 // PATCH A RESTAURANT (CHANGE NAME)
 router.patch("/:id", limitNumOfRequests, async (req, res) => {
