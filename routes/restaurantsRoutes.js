@@ -12,7 +12,7 @@ const dotenv = require("dotenv");
 dotenv.config({
   path: "./config.env",
 });
-
+// console.log(process.env.MONGO_URI);
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -73,6 +73,15 @@ const restaurantSchema = Joi.object({
   cuisine: Joi.string().alphanum().required(),
   priceCategory: Joi.number().integer().min(1).max(3).required(),
 });
+const restReqQuerySchema = Joi.object({
+  name: Joi.string(),
+  address: Joi.string(),
+  city: Joi.string(),
+  country: Joi.string(),
+  start: Joi.number().integer().min(1).max(5),
+  cuisine: Joi.string(),
+  priceCategory: Joi.number().integer().min(1).max(3)
+})
 // MIDDLEWARES
 // RESTAURANT VALIDATION MIDDLEWARE
 function validRestaurant(req, res, next) {
@@ -145,6 +154,23 @@ router.get("/", async (req, res) => {
       return res.status(400).json({message: err});
     }
   }
+  const validation = restReqQuerySchema.validate(req.query);
+  if (validation.error) {
+    return res.status(400).json({
+      message: "Bad request query (400)",
+      description: validation.error.details[0].message,
+    });
+  }
+  let result;
+  try {
+    result = await Restaurant.find(req.query);
+  } catch (err) {
+    return res.status(400).json({message: err});
+  }
+  if (result.length === 0) {
+    return res.json({message: "No restaurant matching parameters"});
+  }
+  return res.json(result);
 });
 
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
