@@ -94,6 +94,11 @@ function limitNumOfRequests(_req, res, next) {
 // ADVANCED ROUTES (WITH QUERY PARAMETERS)
 router.get("/", async (req, res) => {
   const queryKeys = Object.keys(req.query);
+  const instruction = "SELECT * FROM hotels";
+  let instruction2 = `SELECT * FROM hotels WHERE ${queryKeys[0]}=${req.query[queryKeys[0]].toString().toLowerCase()}`;
+
+
+  // const queryKeys = Object.keys(req.query);
   let result = await Postgres.query(
     "SELECT * FROM restaurants"
   );
